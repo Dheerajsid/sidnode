@@ -1,0 +1,11 @@
+@charset "utf-8";
+
+/* IDE Support
+ * We recommend Stylelint and Tailwind Extensions for better IDE support.
+ * @see https://marketplace.visualstudio.com/items?itemName=bradlc.vscode-tailwindcss
+ * @see https://marketplace.visualstudio.com/items?itemName=stylelint.vscode-stylelint
+*/
+
+@import '@node-core/ui-components/styles/index.css';
+@import './effects.css';
+@import './locales.css';

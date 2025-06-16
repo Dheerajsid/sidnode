@@ -1,0 +1,154 @@
+# Security Notes
+# Only selected Actions are allowed within this repository. Please refer to (https://github.com/nodejs/nodejs.org/settings/actions)
+# for the full list of available actions. If you want to add a new one, please reach out a maintainer with Admin permissions.
+# REVIEWERS, please always double-check security practices before merging a PR that contains workflow changes!!
+# AUTHORS, please only use actions with explicit SHA references, and avoid using `@master` or `@main` references or `@version` tags.
+
+name: Linting and Tests
+
+# This workflow should run either on `merge_group`, `pull_request`, or `push` events
+# since we want to run lint checks against any changes on pull requests, or the final patch on merge groups
+# or if direct pushes happen to main (or when changes in general land on the `main` (default) branch)
+# Note that the reason why we run this on pushes against `main` is that on rare cases, maintainers might do direct pushes against `main`
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  merge_group:
+
+# The permissions specified below apply to workflows triggered by `merge_group`, `push`, and `pull_request` events that originate from the same repository (non-fork).
+# However, workflows triggered by `pull_request` events from forked repositories are treated differently for security reasons:
+# - These workflows **do not** have access to any secrets configured in the repository.
+# - They are also **not granted any permissions** to perform actions on the base repository.
+#
+# This is a deliberate security restriction designed to prevent potential abuse through malicious pull requests from forks.
+# For a deeper explanation and best practices for securing your GitHub Actions workflows, particularly against so-called "pwn requests",
+# refer to https://securitylab.github.com/resources/github-actions-preventing-pwn-requests/
+permissions:
+  contents: read
+  actions: read
+
+env:
+  # See https://turbo.build/repo/docs/reference/command-line-reference/run#--cache-dir
+  TURBO_ARGS: --cache-dir=.turbo/cache
+
+jobs:
+  lint:
+    name: Quality checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@0634a2670c59f64b4a01f0f96f84700a4088b9f0 # v2.12.0
+        with:
+          egress-policy: audit
+
+      - name: Git Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Restore Lint Cache
+        uses: actions/cache/restore@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+        with:
+          path: |
+            .turbo/cache
+            .eslintmdcache
+            .stylelintcache
+            .prettiercache
+          # We want to restore Turborepo Cache and ESlint and Prettier Cache
+          # The ESLint and Prettier cache's are useful to reduce the overall runtime of ESLint and Prettier
+          # as they will only run on files that have changed since the last cached run
+          # this might of course lead to certain files not being checked against the linter, but the chances
+          # of such situation from happening are very slim as the checksums of both files would need to match
+          key: cache-lint-${{ hashFiles('pnpm-lock.yaml') }}-${{ hashFiles('.turbo/cache/**') }}
+          restore-keys: |
+            cache-lint-${{ hashFiles('pnpm-lock.yaml') }}-
+            cache-lint-
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          # We want to ensure that the Node.js version running here respects our supported versions
+          node-version-file: '.nvmrc'
+          cache: 'pnpm'
+
+      - name: Install packages
+        run: pnpm install --frozen-lockfile
+
+      - name: Run quality checks with `turbo`
+        # We run the ESLint and Prettier commands on all Workflow triggers of the `Lint` job, besides if
+        # the Pull Request comes from a Crowdin Branch, as we don't want to run ESLint and Prettier on Crowdin PRs
+        # Note: Linting and Prettifying of files on Crowdin PRs is handled by the `translations-pr.yml` Workflow
+        if: |
+          (github.event_name == 'push' || github.event_name == 'merge_group') ||
+          (github.event_name == 'pull_request' && github.event.pull_request.head.ref != 'chore/crowdin')
+        run: node_modules/.bin/turbo lint lint:types prettier ${{ env.TURBO_ARGS }}
+
+      - name: Save Lint Cache
+        # We only want to save caches on `push` events or `pull_request_target` events
+        # and if it is a `pull_request_target` event, we want to avoid saving the cache if the PR comes from Dependabot
+        # or if it comes from an automated Crowdin Pull Request
+        # The reason we save caches on `push` is because caches creates on `main` (default) branches can be reused within
+        # other Pull Requests and PRs coming from forks
+        if: |
+          github.event_name == 'push' ||
+          (github.event_name == 'pull_request' &&
+            startsWith(github.event.pull_request.head.ref, 'dependabot/') == false &&
+            github.event.pull_request.head.ref != 'chore/crowdin')
+        uses: actions/cache/save@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+        with:
+          path: |
+            .turbo/cache
+            .eslintmdcache
+            .stylelintcache
+            .prettiercache
+          key: cache-lint-${{ hashFiles('pnpm-lock.yaml') }}-${{ hashFiles('.turbo/cache/**') }}
+
+  tests:
+    name: Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@0634a2670c59f64b4a01f0f96f84700a4088b9f0 # v2.12.0
+        with:
+          egress-policy: audit
+
+      - name: Git Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          # We want to ensure that the Node.js version running here respects our supported versions
+          node-version-file: '.nvmrc'
+          cache: 'pnpm'
+
+      - name: Install packages
+        run: pnpm install --frozen-lockfile
+
+      - name: Run Unit Tests
+        # We want to run Unit Tests in every circumstance, including Crowdin PRs and Dependabot PRs to ensure
+        # that changes to dependencies or translations don't break the Unit Tests
+        run: node --run test:ci -- ${{ env.TURBO_ARGS }}
+
+      - name: Upload test coverage to Codecov
+        if: ${{ !cancelled() && github.event_name != 'merge_group' }}
+        uses: codecov/codecov-action@18283e04ce6e62d37312384ff67231eb8fd56d24 # v5.4.3
+        with:
+          files: ./apps/site/lcov.info,./packages/*/lcov.info
+
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() && github.event_name != 'merge_group' }}
+        uses: codecov/test-results-action@47f89e9acb64b76debcd5ea40642d25a4adced9f # v1.1.1
+        with:
+          files: ./apps/site/junit.xml,./packages/*/junit.xml
