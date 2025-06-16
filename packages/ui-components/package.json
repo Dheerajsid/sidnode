@@ -42,11 +42,11 @@
     "@radix-ui/react-tabs": "~1.1.12",
     "@radix-ui/react-toast": "~1.2.14",
     "@radix-ui/react-tooltip": "~1.2.7",
-    "@tailwindcss/postcss": "~4.1.8",
+    "@tailwindcss/postcss": "~4.1.10",
     "@vcarl/remark-headings": "~0.1.0",
     "classnames": "~2.5.1",
     "postcss-calc": "^10.1.1",
-    "tailwindcss": "~4.0.17"
+    "tailwindcss": "~4.1.10"
   },
   "devDependencies": {
     "@storybook/addon-styling-webpack": "^1.0.1",
