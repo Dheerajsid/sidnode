@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <p align="center">
   <br />
   <a href="https://nodejs.org">
@@ -123,3 +124,6 @@ These are maintained in different repositories and we urge users to open **issue
 [collaborator guide]: https://github.com/nodejs/nodejs.org/blob/main/docs/collaborator-guide.md
 [figma design]: https://www.figma.com/file/pu1vZPqNIM7BePd6W8APA5/Node.js
 [translation guidelines]: https://github.com/nodejs/nodejs.org/blob/main/docs/translation.md
+=======
+# sidnode
+>>>>>>> 720b68a26ad407a91631cab50e5c1428a099723b
