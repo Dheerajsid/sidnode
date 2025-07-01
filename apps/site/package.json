@@ -46,7 +46,7 @@
     "@radix-ui/react-tabs": "^1.1.12",
     "@radix-ui/react-toast": "^1.2.14",
     "@radix-ui/react-tooltip": "^1.2.7",
-    "@tailwindcss/postcss": "~4.1.8",
+    "@tailwindcss/postcss": "~4.1.11",
     "@types/node": "22.15.3",
     "@types/react": "^19.1.6",
     "@vcarl/remark-headings": "~0.1.0",
@@ -72,7 +72,7 @@
     "remark-reading-time": "~2.0.2",
     "semver": "~7.7.2",
     "sval": "^0.6.3",
-    "tailwindcss": "~4.0.17",
+    "tailwindcss": "~4.1.11",
     "vfile": "~6.0.3",
     "vfile-matter": "~5.0.1"
   },
